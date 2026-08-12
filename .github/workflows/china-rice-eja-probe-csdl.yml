@@ -1,0 +1,25 @@
+name: China Rice EJA Probe CSDLv2
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/probe_csdl.py'
+      - '.github/workflows/china-rice-eja-probe-csdl.yml'
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Inspect CSDLv2 portals and JS endpoints
+        run: python rice-eja-acquisition/probe_csdl.py
+      - name: Upload probe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-csdl-probe
+          path: rice-eja-acquisition/csdl-probe/
+          retention-days: 30
