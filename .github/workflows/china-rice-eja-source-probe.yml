@@ -1,0 +1,31 @@
+name: China Rice EJA Source Probe
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/**'
+      - '.github/workflows/china-rice-eja-source-probe.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Probe authoritative public sources
+        run: python rice-eja-acquisition/probe_sources.py
+
+      - name: Upload source-probe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-source-probe
+          path: rice-eja-acquisition/output/
+          retention-days: 30
