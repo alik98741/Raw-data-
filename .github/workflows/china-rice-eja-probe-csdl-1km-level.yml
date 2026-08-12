@@ -1,0 +1,23 @@
+name: China Rice EJA Probe CSDL 1km Level
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/probe_csdl_1km_level.py'
+      - '.github/workflows/china-rice-eja-probe-csdl-1km-level.yml'
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python rice-eja-acquisition/probe_csdl_1km_level.py
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-csdl-1km-level
+          path: rice-eja-acquisition/csdl-1km-level/
+          retention-days: 30
