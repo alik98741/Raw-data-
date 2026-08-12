@@ -1,0 +1,25 @@
+name: China Rice EJA CSDL getAllUrl v10
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/probe_csdl_getall_v10.py'
+      - '.github/workflows/china-rice-eja-csdl-getall-v10.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe official ScienceDB URL export
+        run: python rice-eja-acquisition/probe_csdl_getall_v10.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-csdl-getall-v10
+          path: rice-eja-acquisition/csdl-getall-v10/
+          retention-days: 30
