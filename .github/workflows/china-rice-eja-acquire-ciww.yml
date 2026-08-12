@@ -26,26 +26,58 @@ jobs:
         run: |
           mkdir -p rice-eja-acquisition/ciww-work/depth rice-eja-acquisition/ciww-results
           curl -L --fail --retry 5 --retry-delay 5 -o rice-eja-acquisition/ciww-work/IWW_depth.rar https://ndownloader.figshare.com/files/60873439
-          7z l -ba rice-eja-acquisition/ciww-work/IWW_depth.rar > rice-eja-acquisition/ciww-results/IWW_depth_archive_listing.txt
+          7z l -slt rice-eja-acquisition/ciww-work/IWW_depth.rar > rice-eja-acquisition/ciww-results/IWW_depth_archive_listing.txt
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          txt=Path('rice-eja-acquisition/ciww-results/IWW_depth_archive_listing.txt').read_text(errors='replace').splitlines()
+          paths=[]
+          for line in txt:
+              if line.startswith('Path = '):
+                  p=line[7:]
+                  if re.search(r'20(?:15|16|17|18|19|20)',p) and p.lower().endswith(('.tif','.tiff')):
+                      paths.append(p)
+          Path('rice-eja-acquisition/ciww-work/depth_selected.txt').write_text('\n'.join(paths)+'\n')
+          print('Selected depth TIFFs:',len(paths))
+          print('\n'.join(paths[:20]))
+          if not paths: raise SystemExit('No 2015-2020 depth TIFF paths found in archive listing')
+          PY
           cd rice-eja-acquisition/ciww-work/depth
-          7z x -y ../IWW_depth.rar '*2015*' '*2016*' '*2017*' '*2018*' '*2019*' '*2020*'
+          7z x -y ../IWW_depth.rar @../depth_selected.txt
           cd ../../..
           python rice-eja-acquisition/aggregate_ciww.py --kind depth --input-dir rice-eja-acquisition/ciww-work/depth
-          rm -rf rice-eja-acquisition/ciww-work/depth rice-eja-acquisition/ciww-work/IWW_depth.rar
+          rm -rf rice-eja-acquisition/ciww-work/depth rice-eja-acquisition/ciww-work/IWW_depth.rar rice-eja-acquisition/ciww-work/depth_selected.txt
       - name: Download and process CIWW volume
         run: |
           mkdir -p rice-eja-acquisition/ciww-work/volume
           curl -L --fail --retry 5 --retry-delay 5 -o rice-eja-acquisition/ciww-work/IWW_volume.rar https://ndownloader.figshare.com/files/60873442
-          7z l -ba rice-eja-acquisition/ciww-work/IWW_volume.rar > rice-eja-acquisition/ciww-results/IWW_volume_archive_listing.txt
+          7z l -slt rice-eja-acquisition/ciww-work/IWW_volume.rar > rice-eja-acquisition/ciww-results/IWW_volume_archive_listing.txt
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          txt=Path('rice-eja-acquisition/ciww-results/IWW_volume_archive_listing.txt').read_text(errors='replace').splitlines()
+          paths=[]
+          for line in txt:
+              if line.startswith('Path = '):
+                  p=line[7:]
+                  if re.search(r'20(?:15|16|17|18|19|20)',p) and p.lower().endswith(('.tif','.tiff')):
+                      paths.append(p)
+          Path('rice-eja-acquisition/ciww-work/volume_selected.txt').write_text('\n'.join(paths)+'\n')
+          print('Selected volume TIFFs:',len(paths))
+          print('\n'.join(paths[:20]))
+          if not paths: raise SystemExit('No 2015-2020 volume TIFF paths found in archive listing')
+          PY
           cd rice-eja-acquisition/ciww-work/volume
-          7z x -y ../IWW_volume.rar '*2015*' '*2016*' '*2017*' '*2018*' '*2019*' '*2020*'
+          7z x -y ../IWW_volume.rar @../volume_selected.txt
           cd ../../..
           python rice-eja-acquisition/aggregate_ciww.py --kind volume --input-dir rice-eja-acquisition/ciww-work/volume
-          rm -rf rice-eja-acquisition/ciww-work/volume rice-eja-acquisition/ciww-work/IWW_volume.rar
+          rm -rf rice-eja-acquisition/ciww-work/volume rice-eja-acquisition/ciww-work/IWW_volume.rar rice-eja-acquisition/ciww-work/volume_selected.txt
       - name: Upload compact CIWW results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: china-rice-eja-ciww1km-v4-results
           path: rice-eja-acquisition/ciww-results/
+          if-no-files-found: warn
           retention-days: 30
           compression-level: 6
