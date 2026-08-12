@@ -1,0 +1,23 @@
+name: China Rice EJA Probe CSDL API Variants
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/probe_csdl_api_variants.py'
+      - '.github/workflows/china-rice-eja-probe-csdl-api-variants.yml'
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python rice-eja-acquisition/probe_csdl_api_variants.py
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-csdl-api-variants
+          path: rice-eja-acquisition/csdl-api-variants/
+          retention-days: 30
