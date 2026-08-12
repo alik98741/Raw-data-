@@ -1,0 +1,31 @@
+name: China Rice EJA Acquire CIrr and AquaCrop
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/acquire_cirr_aquacrop.py'
+      - '.github/workflows/china-rice-eja-acquire-cirr-aquacrop.yml'
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install geospatial stack
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy pandas rasterio geopandas pyogrio shapely
+      - name: Download and aggregate real study data
+        run: python rice-eja-acquisition/acquire_cirr_aquacrop.py
+      - name: Upload compact scientific results
+        uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-cirr-aquacrop-results
+          path: rice-eja-acquisition/results/
+          retention-days: 30
+          compression-level: 6
