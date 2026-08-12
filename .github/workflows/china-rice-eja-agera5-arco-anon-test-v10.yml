@@ -1,0 +1,29 @@
+name: China Rice EJA AgERA5 ARCO anon test v10
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/china-rice-eja-agera5-arco-anon-test-v10.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Test anonymous ARCO metadata access only
+        run: |
+          mkdir -p out
+          set +e
+          for kind in geo time; do
+            if [ "$kind" = geo ]; then U='https://arco.datastores.ecmwf.int/cadl-arco-geo-001/arco/sis_agrometeorological_indicators/all/geoChunked.zarr/.zmetadata'; else U='https://arco.datastores.ecmwf.int/cadl-arco-time-001/arco/sis_agrometeorological_indicators/all/timeChunked.zarr/.zmetadata'; fi
+            code=$(curl -sS -L -D "out/${kind}_headers.txt" -o "out/${kind}_body.bin" -w '%{http_code}' "$U")
+            echo "$kind HTTP=$code bytes=$(wc -c < out/${kind}_body.bin)" | tee -a out/status.txt
+            head -c 1000 "out/${kind}_body.bin" > "out/${kind}_head.txt"
+          done
+          cat out/status.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-agera5-arco-anon-test-v10
+          path: out/
+          retention-days: 30
