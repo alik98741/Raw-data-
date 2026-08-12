@@ -1,0 +1,31 @@
+name: China Rice EJA Test CSDL Child TIFF
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/china-rice-eja-test-csdl-child.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download internal CSDL GeoTIFF by file ID
+        run: |
+          set -euxo pipefail
+          URL='https://www.scidb.cn/api/sdb-download-service/downloadFileMole?fileId=9c6c588104cfd74c8c695dc238d3eca8'
+          curl -L --fail --retry 3 -D headers.txt -o candidate.bin "$URL"
+          ls -lh candidate.bin
+          file candidate.bin | tee filetype.txt
+          head -c 32 candidate.bin | xxd | tee magic.txt
+          grep -iE 'content-type|content-disposition|content-length' headers.txt | tee selected_headers.txt || true
+          if file candidate.bin | grep -qi 'TIFF'; then echo 'CSDL_CHILD_TIFF_OK=1' | tee status.txt; else echo 'CSDL_CHILD_TIFF_OK=0' | tee status.txt; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-csdl-child-test
+          path: |
+            headers.txt
+            selected_headers.txt
+            filetype.txt
+            magic.txt
+            status.txt
+          retention-days: 30
