@@ -1,0 +1,25 @@
+name: China Rice EJA Probe TPDC HTTP individual v10
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/probe_tpdc_http_individual_v10.py'
+      - '.github/workflows/china-rice-eja-probe-tpdc-http-individual-v10.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python rice-eja-acquisition/probe_tpdc_http_individual_v10.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: china-rice-eja-tpdc-http-individual-v10
+          path: rice-eja-acquisition/tpdc-http-individual-v10/
+          retention-days: 30
