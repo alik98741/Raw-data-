@@ -1,0 +1,23 @@
+name: China Rice EJA Resolve CSDLv2 ScienceDB
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/resolve_csdl_sciencedb.py'
+      - '.github/workflows/china-rice-eja-resolve-csdl.yml'
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python rice-eja-acquisition/resolve_csdl_sciencedb.py
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-csdl-resolve
+          path: rice-eja-acquisition/csdl-resolve/
+          retention-days: 30
