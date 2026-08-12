@@ -1,0 +1,23 @@
+name: China Rice EJA Test CSDL Download
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/test_csdl_download.py'
+      - '.github/workflows/china-rice-eja-test-csdl-download.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python rice-eja-acquisition/test_csdl_download.py
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-csdl-download-test
+          path: rice-eja-acquisition/csdl-download-test/
+          retention-days: 30
