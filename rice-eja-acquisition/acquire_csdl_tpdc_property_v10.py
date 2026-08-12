@@ -49,9 +49,7 @@ def download_resume(item,path,max_attempts=8):
    with open(path,mode) as out:
     def cb(b):out.write(b);counter[0]+=len(b)
     try:ftp.retrbinary('RETR '+item['remote'],cb,blocksize=256*1024,rest=existing if existing else None)
-    except Exception as e:
-     # TPDC sometimes resets the control connection after the full data socket has completed.
-     attempts.append({'attempt':a+1,'host':host,'start':existing,'end':counter[0],'exception':repr(e)})
+    except Exception as e:attempts.append({'attempt':a+1,'host':host,'start':existing,'end':counter[0],'exception':repr(e)})
     else:attempts.append({'attempt':a+1,'host':host,'start':existing,'end':counter[0],'exception':None})
   finally:
    if ftp:
@@ -62,7 +60,6 @@ def download_resume(item,path,max_attempts=8):
   time.sleep(min(5*(a+1),30))
  raise RuntimeError(f'Could not complete {item["name"]}; have {path.stat().st_size if path.exists() else 0}, expected {size}; attempts={attempts}')
 
-# exact boundary once per property
 bm=get_json('https://www.geoboundaries.org/api/current/gbOpen/CHN/ADM1/');bp=WORK/'boundary.geojson';bp.write_bytes(get_bytes(bm['gjDownloadURL']));g=gpd.read_file(bp);namecol='shapeName' if 'shapeName' in g.columns else next(c for c in g.columns if 'name' in c.lower());g['province_raw']=g[namecol].astype(str);g['province']=g.province_raw.map(CROSSWALK);g=g[g.province.notna()].copy()
 if len(g)!=31 or set(g.province)!=set(EXPECTED):raise RuntimeError('NBS31 boundary crosswalk failed')
 g[['province_raw','province']].sort_values('province').to_csv(OUT/'ADM1_to_NBS31_crosswalk_used.csv',index=False)
@@ -79,7 +76,7 @@ for k,item in enumerate(inventory,1):
   if labels is None:
    gg=g.to_crs(src.crs).reset_index(drop=True);labels=rasterize([(geom,i+1) for i,geom in enumerate(gg.geometry)],out_shape=(src.height,src.width),transform=src.transform,fill=0,dtype='int16',all_touched=False);grid_sig=sig
   elif sig!=grid_sig:raise RuntimeError('CSDL grid mismatch')
-  ma=src.read(1,masked=True);raw=np.asarray(ma.filled(np.nan),dtype='float64');scale=float(src.scales[0]) if src.scales else 1.;offset=float(src.offsets[0]) if src.offsets else 0.;data=raw*scale+offset;valid=np.isfinite(data);tags=src.tags();unit=tags.get('units') or tags.get('Units') or (src.units[0] if src.units else None);long_name=tags.get('long_name')
+  ma=src.read(1,masked=True).astype('float64');raw=np.asarray(ma.filled(np.nan),dtype='float64');scale=float(src.scales[0]) if src.scales else 1.;offset=float(src.offsets[0]) if src.offsets else 0.;data=raw*scale+offset;valid=np.isfinite(data);tags=src.tags();unit=tags.get('units') or tags.get('Units') or (src.units[0] if src.units else None);long_name=tags.get('long_name')
   srcmeta={'crs':str(src.crs),'width':src.width,'height':src.height,'nodata':src.nodata,'scale':scale,'offset':offset,'unit_tag':unit,'long_name':long_name,'tags_json':json.dumps(tags,ensure_ascii=False)}
   for i,r in gg.iterrows():
    vals=data[(labels==(i+1))&valid]
