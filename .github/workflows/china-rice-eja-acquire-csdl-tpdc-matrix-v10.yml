@@ -1,0 +1,38 @@
+name: China Rice EJA Acquire CSDL TPDC matrix v10
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/acquire_csdl_tpdc_property_v10.py'
+      - '.github/workflows/china-rice-eja-acquire-csdl-tpdc-matrix-v10.yml'
+
+jobs:
+  acquire:
+    strategy:
+      fail-fast: false
+      max-parallel: 9
+      matrix:
+        property: [BD, CEC, OC, TN, clay, pH, porosity, sand, silt]
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      CSDL_PROPERTY: ${{ matrix.property }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install geospatial stack
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy pandas rasterio geopandas pyogrio shapely
+      - name: Acquire six depth layers for property
+        run: python rice-eja-acquisition/acquire_csdl_tpdc_property_v10.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: china-rice-eja-csdl-v10-${{ matrix.property }}
+          path: rice-eja-acquisition/csdl-tpdc-v10-${{ matrix.property }}/
+          retention-days: 30
+          compression-level: 6
