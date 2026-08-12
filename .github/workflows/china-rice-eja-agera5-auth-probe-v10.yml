@@ -10,29 +10,14 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      CDSAPI_KEY: ${{ secrets.CDSAPI_KEY }}
     steps:
-      - name: Check CDS token presence without revealing it
-        shell: bash
+      - name: Check CDS token presence safely
+        env:
+          CDSAPI_KEY: ${{ secrets.CDSAPI_KEY }}
         run: |
           mkdir -p out
-          if [ -n "$CDSAPI_KEY" ]; then
-            echo 'CDS_SECRET_PRESENT=1' | tee out/status.txt
-            python - <<'PY'
-import os, urllib.request, json
-key=os.environ['CDSAPI_KEY']
-req=urllib.request.Request('https://cds.climate.copernicus.eu/api/profiles/v1/account/verification/pat',data=json.dumps({'token':key}).encode(),headers={'Content-Type':'application/json'},method='POST')
-try:
-    with urllib.request.urlopen(req,timeout=60) as r:
-        body=r.read().decode('utf-8','replace')
-        open('out/verification.txt','w').write('HTTP '+str(r.status)+'\n'+body[:2000])
-except Exception as e:
-    open('out/verification.txt','w').write('ERROR '+repr(e))
-PY
-          else
-            echo 'CDS_SECRET_PRESENT=0' | tee out/status.txt
-          fi
+          python -c "import os,pathlib; pathlib.Path('out/status.txt').write_text('CDS_SECRET_PRESENT='+('1' if os.getenv('CDSAPI_KEY') else '0')+'\n')"
+          cat out/status.txt
       - uses: actions/upload-artifact@v4
         with:
           name: china-rice-eja-agera5-auth-probe-v10
