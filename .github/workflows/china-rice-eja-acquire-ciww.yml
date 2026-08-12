@@ -1,0 +1,51 @@
+name: China Rice EJA Acquire CIWW1km v4
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/aggregate_ciww.py'
+      - '.github/workflows/china-rice-eja-acquire-ciww.yml'
+
+jobs:
+  ciww:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full
+          python -m pip install --upgrade pip
+          pip install numpy pandas rasterio geopandas pyogrio shapely
+      - name: Download and process CIWW depth
+        run: |
+          mkdir -p rice-eja-acquisition/ciww-work/depth rice-eja-acquisition/ciww-results
+          curl -L --fail --retry 5 --retry-delay 5 -o rice-eja-acquisition/ciww-work/IWW_depth.rar https://ndownloader.figshare.com/files/60873439
+          7z l -ba rice-eja-acquisition/ciww-work/IWW_depth.rar > rice-eja-acquisition/ciww-results/IWW_depth_archive_listing.txt
+          cd rice-eja-acquisition/ciww-work/depth
+          7z x -y ../IWW_depth.rar '*2015*' '*2016*' '*2017*' '*2018*' '*2019*' '*2020*'
+          cd ../../..
+          python rice-eja-acquisition/aggregate_ciww.py --kind depth --input-dir rice-eja-acquisition/ciww-work/depth
+          rm -rf rice-eja-acquisition/ciww-work/depth rice-eja-acquisition/ciww-work/IWW_depth.rar
+      - name: Download and process CIWW volume
+        run: |
+          mkdir -p rice-eja-acquisition/ciww-work/volume
+          curl -L --fail --retry 5 --retry-delay 5 -o rice-eja-acquisition/ciww-work/IWW_volume.rar https://ndownloader.figshare.com/files/60873442
+          7z l -ba rice-eja-acquisition/ciww-work/IWW_volume.rar > rice-eja-acquisition/ciww-results/IWW_volume_archive_listing.txt
+          cd rice-eja-acquisition/ciww-work/volume
+          7z x -y ../IWW_volume.rar '*2015*' '*2016*' '*2017*' '*2018*' '*2019*' '*2020*'
+          cd ../../..
+          python rice-eja-acquisition/aggregate_ciww.py --kind volume --input-dir rice-eja-acquisition/ciww-work/volume
+          rm -rf rice-eja-acquisition/ciww-work/volume rice-eja-acquisition/ciww-work/IWW_volume.rar
+      - name: Upload compact CIWW results
+        uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-ciww1km-v4-results
+          path: rice-eja-acquisition/ciww-results/
+          retention-days: 30
+          compression-level: 6
