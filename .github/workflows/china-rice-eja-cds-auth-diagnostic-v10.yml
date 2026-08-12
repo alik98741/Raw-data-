@@ -1,0 +1,28 @@
+name: China Rice EJA CDS auth diagnostic v10
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/probe_cds_token_and_license_v10.py'
+      - '.github/workflows/china-rice-eja-cds-auth-diagnostic-v10.yml'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CDSAPI_KEY: ${{ secrets.CDSAPI_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - name: Safely distinguish token validity from AgERA5 authorisation
+        run: python rice-eja-acquisition/probe_cds_token_and_license_v10.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-cds-auth-diagnostic-v10
+          path: rice-eja-acquisition/cds-auth-diagnostic-v10/
+          retention-days: 30
