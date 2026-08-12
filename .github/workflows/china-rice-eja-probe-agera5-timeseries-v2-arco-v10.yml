@@ -1,0 +1,24 @@
+name: China Rice EJA Probe AgERA5 v2 ARCO v10
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/probe_agera5_timeseries_v2_arco_v10.py'
+      - '.github/workflows/china-rice-eja-probe-agera5-timeseries-v2-arco-v10.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python rice-eja-acquisition/probe_agera5_timeseries_v2_arco_v10.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-agera5-v2-arco-probe-v10
+          path: rice-eja-acquisition/agera5-timeseries-v2-probe-v10/
+          retention-days: 30
