@@ -1,0 +1,24 @@
+name: China Rice EJA probe NCDC FTP v10
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/probe_chinaricecalendar_ncdc_ftp_v10.py'
+      - '.github/workflows/china-rice-eja-probe-ncdc-ftp-v10.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python rice-eja-acquisition/probe_chinaricecalendar_ncdc_ftp_v10.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-ncdc-ftp-probe-v10
+          path: rice-eja-acquisition/chinaricecalendar-ncdc-probe-v10/
+          retention-days: 30
