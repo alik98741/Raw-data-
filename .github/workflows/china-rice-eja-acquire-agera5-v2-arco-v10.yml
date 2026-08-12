@@ -1,0 +1,36 @@
+name: China Rice EJA Acquire AgERA5 v2 ARCO v10
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/acquire_agera5_v2_arco_province_v10.py'
+      - '.github/workflows/china-rice-eja-acquire-agera5-v2-arco-v10.yml'
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      CDSAPI_KEY: ${{ secrets.CDSAPI_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require secure CDS personal access token
+        run: |
+          python -c "import os; assert os.getenv('CDSAPI_KEY'), 'CDSAPI_KEY repository secret is missing'"
+      - name: Install scientific stack
+        run: |
+          python -m pip install --upgrade pip
+          pip install 'xarray>=2025.1' 'zarr<3' fsspec aiohttp dask numpy pandas rasterio geopandas pyogrio shapely affine
+      - name: Acquire real AgERA5 v2 and aggregate to NBS31
+        run: python rice-eja-acquisition/acquire_agera5_v2_arco_province_v10.py
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: china-rice-eja-agera5-v2-2015-2020
+          path: rice-eja-acquisition/agera5-v2-province-v10/
+          retention-days: 30
+          compression-level: 6
