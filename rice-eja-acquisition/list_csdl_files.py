@@ -1,57 +1,75 @@
-import json,urllib.request,re
+import json, urllib.request
 from pathlib import Path
-OUT=Path('rice-eja-acquisition/csdl-files');OUT.mkdir(parents=True,exist_ok=True)
+
+OUT=Path('rice-eja-acquisition/csdl-files'); OUT.mkdir(parents=True,exist_ok=True)
 BASE='https://www.scidb.cn'
 DS='cbd2c393a5ad4056a1bd9130ca1340f6'; VER='V2'
-UA={'User-Agent':'Mozilla/5.0','Accept':'application/json,text/plain,*/*','Content-Type':'application/json;charset=UTF-8','Referer':'https://www.scidb.cn/en/s/ZZJzAz'}
+END='/api/gin-sdb-filetree/public/file/childrenFileListByPath'
+SEARCH='/api/gin-sdb-filetree/public/file/searchTreeList'
+UA={'User-Agent':'Mozilla/5.0','Accept':'application/json,text/plain,*/*','Content-Type':'application/json;charset=UTF-8','Referer':'https://www.scidb.cn/en/s/ZZJzAz','Origin':'https://www.scidb.cn'}
 
 def post(path,obj):
- data=json.dumps(obj).encode()
- req=urllib.request.Request(BASE+path,data=data,headers=UA,method='POST')
- with urllib.request.urlopen(req,timeout=90) as r: return json.loads(r.read().decode('utf-8','replace'))
+    data=json.dumps(obj).encode()
+    req=urllib.request.Request(BASE+path,data=data,headers=UA,method='POST')
+    with urllib.request.urlopen(req,timeout=90) as r:
+        j=json.loads(r.read().decode('utf-8','replace'))
+    if j.get('code') not in (20000,200,'20000','200'):
+        raise RuntimeError(f"ScienceDB API error: {j}")
+    return j
 
-def get(path):
- req=urllib.request.Request(BASE+path,headers=UA)
- with urllib.request.urlopen(req,timeout=90) as r: return r.geturl(),dict(r.headers),r.read(2_000_000)
+def children(path,page_size=1000):
+    allrows=[]; last=0
+    for _ in range(1000):
+        j=post(END,{'dataSetId':DS,'version':VER,'path':path,'lastIndex':last,'pageSize':page_size})
+        rows=j.get('data') or []
+        if not rows: break
+        allrows.extend(rows)
+        # API uses index as paging position. Stop when fewer than requested.
+        if len(rows)<page_size: break
+        last=max(int(r.get('index',last)) for r in rows)+1
+    return allrows
 
-# root and large-page listing
-roots=[]
-for path in ['/','']:
- try:
-  j=post('/gin-sdb-filetree/public/file/childrenFileListByPath',{'dataSetId':DS,'version':VER,'path':path,'lastIndex':0,'pageSize':2000})
-  roots.append({'path':path,'response':j})
- except Exception as e: roots.append({'path':path,'error':repr(e)})
-(OUT/'root_responses.json').write_text(json.dumps(roots,indent=2,ensure_ascii=False),encoding='utf-8')
-print(json.dumps(roots,ensure_ascii=False)[:10000])
+root=children('/'+VER)
+(OUT/'root_V2.json').write_text(json.dumps(root,indent=2,ensure_ascii=False),encoding='utf-8')
+print('root:',[(x.get('fileName'),x.get('path'),x.get('dir')) for x in root])
+if not any(x.get('path')=='/V2/1km' for x in root):
+    raise RuntimeError('CSDLv2 /V2/1km directory not found')
 
-# Search public tree for high-value terms; this endpoint may recursively search.
-terms=['1km','clay','sand','silt','bulk','density','organic','carbon','SOC','CEC','pH','nitrogen','porosity','q0.05','q0.95','mean']
+# Recursively enumerate only the 1-km branch.
+allnodes=[]; queue=['/V2/1km']; seen=set()
+while queue:
+    p=queue.pop(0)
+    if p in seen: continue
+    seen.add(p)
+    rows=children(p)
+    print(p, len(rows))
+    for r in rows:
+        allnodes.append(r)
+        if r.get('dir'):
+            queue.append(r.get('path'))
+
+(OUT/'CSDLv2_1km_all_nodes.json').write_text(json.dumps(allnodes,indent=2,ensure_ascii=False),encoding='utf-8')
+files=[r for r in allnodes if not r.get('dir')]
+(OUT/'CSDLv2_1km_files.json').write_text(json.dumps(files,indent=2,ensure_ascii=False),encoding='utf-8')
+
+# Search endpoint is retained only as an independent cross-check.
+terms=['clay','sand','silt','bulk','organic','carbon','cec','ph','nitrogen','porosity','mean','q0.05','q0.95']
 search=[]
 for term in terms:
- try:
-  j=post('/gin-sdb-filetree/public/file/searchTreeList',{'dataSetId':DS,'version':VER,'search':term})
-  search.append({'term':term,'response':j})
- except Exception as e: search.append({'term':term,'error':repr(e)})
-(OUT/'search_responses.json').write_text(json.dumps(search,indent=2,ensure_ascii=False),encoding='utf-8')
+    try:
+        j=post(SEARCH,{'dataSetId':DS,'version':VER,'search':term})
+        search.append({'term':term,'data':j.get('data')})
+    except Exception as e:
+        search.append({'term':term,'error':repr(e)})
+(OUT/'search_crosscheck.json').write_text(json.dumps(search,indent=2,ensure_ascii=False),encoding='utf-8')
 
-# Flatten likely file objects from both responses.
-flat=[]
-def walk(x,ctx=''):
- if isinstance(x,dict):
-  # capture dicts that resemble nodes/files
-  keys=set(x)
-  if keys & {'name','fileName','label','path','id','fileId','size','type'}:
-   flat.append({'context':ctx,**{k:x.get(k) for k in ['id','fileId','name','fileName','label','path','type','size','fileSize','parentId'] if k in x}})
-  for k,v in x.items(): walk(v,ctx+'/'+str(k))
- elif isinstance(x,list):
-  for i,v in enumerate(x): walk(v,ctx+f'[{i}]')
-for r in roots: walk(r,'root')
-for r in search: walk(r,'search:'+r.get('term',''))
-# dedupe serialized
-seen=set(); uniq=[]
-for r in flat:
- s=json.dumps(r,sort_keys=True,ensure_ascii=False)
- if s not in seen:seen.add(s);uniq.append(r)
-(OUT/'flattened_nodes.json').write_text(json.dumps(uniq,indent=2,ensure_ascii=False),encoding='utf-8')
-print('flattened nodes',len(uniq))
-for r in uniq[:200]: print(r)
+# Make a human-readable inventory of relevant candidate files.
+keywords=['clay','sand','silt','bulk','bd','organic','soc','carbon','cec','ph','nitrogen','tn','porosity']
+candidates=[]
+for f in files:
+    text=(f.get('fileName','')+' '+f.get('path','')).lower()
+    if any(k in text for k in keywords):
+        candidates.append({k:f.get(k) for k in ['id','fileName','path','size','md5','suffix','url','canPreview','index']})
+(OUT/'CSDLv2_1km_study_candidates.json').write_text(json.dumps(candidates,indent=2,ensure_ascii=False),encoding='utf-8')
+print('1km nodes',len(allnodes),'files',len(files),'study candidates',len(candidates))
+for x in candidates[:250]: print(x)
