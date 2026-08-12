@@ -1,0 +1,41 @@
+name: China Rice EJA CSDL transport diagnose v10
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/china-rice-eja-csdl-transport-diagnose-v10.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Diagnose ScienceDB binary transport without full download
+        run: |
+          mkdir -p out
+          set +e
+          # Establish a browser-like session on the exact dataset page and URL-export API.
+          curl -sS -L -c cookies.txt -b cookies.txt -A 'Mozilla/5.0' -H 'Accept: text/html,application/xhtml+xml' 'https://www.scidb.cn/en/s/ZZJzAz' -o /dev/null
+          curl -sS -L -c cookies.txt -b cookies.txt -A 'Mozilla/5.0' -e 'https://www.scidb.cn/en/s/ZZJzAz' 'https://www.scidb.cn/api/sdb-filetree-service/getAllUrl?dataSetId=cbd2c393a5ad4056a1bd9130ca1340f6&version=V2&global=Shanghai' -o out/getall.txt
+
+          CSDL_FULL='https://download.scidb.cn/download?fileId=7599a04028025a6f67af8d0ad24332d1&path=/V2/1km/GTiff/BD/BD_0-5cm_1km_mean.zip&fileName=BD_0-5cm_1km_mean.zip'
+          CSDL_ID='https://download.scidb.cn/download?fileId=7599a04028025a6f67af8d0ad24332d1'
+          # Known registration-free ScienceDB file from a published Data in Brief availability statement.
+          PUBLIC='https://download.scidb.cn/download?fileId=f4fdeb40a3d67f819df80b7fb2f3d1b0&path=/V2/AGB-2017_20m.zip&fileName=AGB-2017_20m.zip'
+
+          testurl(){
+            name="$1"; url="$2"
+            code=$(curl -sS -L -c cookies.txt -b cookies.txt -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/123 Safari/537.36' -e 'https://www.scidb.cn/en/s/ZZJzAz' -H 'Accept: */*' -H 'Origin: https://www.scidb.cn' -r 0-1023 -D "out/${name}_headers.txt" -o "out/${name}_body.bin" -w '%{http_code}' "$url")
+            echo "$name HTTP=$code bytes=$(wc -c < out/${name}_body.bin)" | tee -a out/status.txt
+            file "out/${name}_body.bin" >> out/status.txt
+          }
+          testurl csdl_full "$CSDL_FULL"
+          testurl csdl_fileid_only "$CSDL_ID"
+          testurl known_public "$PUBLIC"
+          cat out/status.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-csdl-transport-diagnose-v10
+          path: out/
+          retention-days: 30
