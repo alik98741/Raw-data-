@@ -1,0 +1,24 @@
+name: China Rice EJA Probe TPDC CSDL v10
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rice-eja-acquisition/probe_tpdc_csdl_v10.py'
+      - '.github/workflows/china-rice-eja-probe-tpdc-csdl-v10.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python rice-eja-acquisition/probe_tpdc_csdl_v10.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: china-rice-eja-tpdc-csdl-v10
+          path: rice-eja-acquisition/tpdc-csdl-v10/
+          retention-days: 30
