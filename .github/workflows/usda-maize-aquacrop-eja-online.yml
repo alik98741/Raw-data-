@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '*/5 * * * *'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'maize-aquacrop-eja/**'
+      - '.github/workflows/usda-maize-aquacrop-eja-online.yml'
 
 jobs:
   aquacrop:
