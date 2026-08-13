@@ -1,0 +1,45 @@
+name: USDA maize AquaCrop EJA online
+
+on:
+  push:
+    branches: [aquacrop-eja-online]
+    paths:
+      - 'maize-aquacrop-eja/**'
+      - '.github/workflows/usda-maize-aquacrop-eja-online.yml'
+  workflow_dispatch:
+
+jobs:
+  aquacrop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install AquaCrop and analysis dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install aquacrop==3.1.0 pandas numpy openpyxl scikit-learn
+          python - <<'PY'
+          import aquacrop, sys
+          print('Python', sys.version)
+          print('AquaCrop', getattr(aquacrop,'__version__','unknown'))
+          PY
+
+      - name: Run AquaCrop smoke test
+        run: python maize-aquacrop-eja/smoke_aquacrop.py
+
+      - name: Upload smoke-test outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: usda-maize-aquacrop-smoke
+          path: maize-aquacrop-eja/smoke_outputs/
+          if-no-files-found: warn
+          retention-days: 30
