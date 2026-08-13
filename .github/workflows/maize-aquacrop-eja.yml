@@ -22,9 +22,15 @@ jobs:
         run: curl -L --fail --retry 3 'https://ndownloader.figshare.com/files/44526245' -o maize_2012_2013.xlsx
       - name: Run true internal-state assimilation
         run: python maize-aquacrop-eja/aquacrop_state_assimilation.py
-      - name: Commit assimilation results
+      - name: Commit assimilation results safely
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+alik98741@users.noreply.github.com'
           git add maize-aquacrop-eja/results maize-aquacrop-eja/results_assimilation
-          if git diff --cached --quiet; then echo 'No result changes to commit.'; else git commit -m 'Add true AquaCrop state-assimilation results'; git push; fi
+          if git diff --cached --quiet; then
+            echo 'No result changes to commit.'
+          else
+            git commit -m 'Add corrected AquaCrop state-assimilation results'
+            git pull --rebase origin maize-aquacrop-eja-2012-2013
+            git push origin HEAD:maize-aquacrop-eja-2012-2013
+          fi
