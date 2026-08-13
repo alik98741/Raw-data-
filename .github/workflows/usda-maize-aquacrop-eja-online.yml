@@ -2,14 +2,12 @@ name: USDA maize AquaCrop EJA online
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'maize-aquacrop-eja/**'
-      - '.github/workflows/usda-maize-aquacrop-eja-online.yml'
+  issues:
+    types: [opened]
 
 jobs:
   aquacrop:
+    if: github.event_name != 'issues' || startsWith(github.event.issue.title, '[RUN GENUINE AQUACROP]')
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
@@ -28,13 +26,13 @@ jobs:
           print('Python', sys.version)
           print('AquaCrop', getattr(aquacrop,'__version__','unknown'))
           PY
-      - name: Run complete AquaCrop blind-year analysis
-        run: python maize-aquacrop-eja/aquacrop_eja_pipeline.py
-      - name: Upload complete outputs
+      - name: Run all 24 genuine AquaCrop simulations
+        run: python maize-aquacrop-eja/smoke_aquacrop.py
+      - name: Upload raw AquaCrop outputs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: usda-maize-aquacrop-complete
-          path: maize-aquacrop-eja/outputs/
+          name: usda-maize-genuine-aquacrop-24
+          path: maize-aquacrop-eja/smoke_outputs/
           if-no-files-found: warn
           retention-days: 30
