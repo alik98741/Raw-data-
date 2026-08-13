@@ -11,28 +11,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install AquaCrop and analysis dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install aquacrop==3.1.0 pandas numpy openpyxl scikit-learn
-          python - <<'PY'
-          import aquacrop, sys
-          print('Python', sys.version)
-          print('AquaCrop', getattr(aquacrop,'__version__','unknown'))
-          PY
-      - name: Run all 24 genuine AquaCrop simulations
+      - name: Install dependencies
+        run: python -m pip install aquacrop==3.1.0 pandas numpy openpyxl scikit-learn
+      - name: Run AquaCrop
         run: python maize-aquacrop-eja/smoke_aquacrop.py
-      - name: Upload raw AquaCrop outputs
+      - name: Upload outputs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: usda-maize-genuine-aquacrop-24
-          path: maize-aquacrop-eja/smoke_outputs/
+          name: usda-maize-aquacrop-prior-24
+          path: maize-aquacrop-eja/prior_outputs/
           if-no-files-found: warn
           retention-days: 30
