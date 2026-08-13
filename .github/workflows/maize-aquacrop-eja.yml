@@ -6,6 +6,7 @@ on:
       - 'maize-aquacrop-eja/run_aquacrop.py'
       - 'maize-aquacrop-eja/refine_site_soil.py'
       - 'maize-aquacrop-eja/refine_measured_fc.py'
+      - 'maize-aquacrop-eja/root_initial_sensitivity.py'
       - '.github/workflows/maize-aquacrop-eja.yml'
   workflow_dispatch:
 permissions:
@@ -27,11 +28,11 @@ jobs:
           curl -L --fail --retry 3 'https://ndownloader.figshare.com/files/44526245' -o maize_2012_2013.xlsx
           curl -L --fail --retry 3 'https://ndownloader.figshare.com/files/44334653' -o LIRF_Soils.xlsx
           sha256sum maize_2012_2013.xlsx LIRF_Soils.xlsx
-      - name: Run AquaCrop soil-parameterization audit
-        run: python maize-aquacrop-eja/refine_measured_fc.py
+      - name: Run AquaCrop root-depth and initial-water audit
+        run: python maize-aquacrop-eja/root_initial_sensitivity.py
       - name: Commit reproducible result files
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add maize-aquacrop-eja/results maize-aquacrop-eja/results_refined maize-aquacrop-eja/results_measured_fc
-          if git diff --cached --quiet; then echo 'No result changes to commit.'; else git commit -m 'Add measured-FC AquaCrop refinement results'; git push; fi
+          git add maize-aquacrop-eja/results maize-aquacrop-eja/results_sensitivity
+          if git diff --cached --quiet; then echo 'No result changes to commit.'; else git commit -m 'Add AquaCrop root-initial sensitivity results'; git push; fi
