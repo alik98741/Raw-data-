@@ -23,7 +23,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: usda-maize-aquacrop-prior-24
-          path: maize-aquacrop-eja/prior_outputs/
+          name: usda-maize-aquacrop-fcinit-24
+          path: maize-aquacrop-eja/fcinit_outputs/
           if-no-files-found: warn
           retention-days: 30
