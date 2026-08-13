@@ -1,0 +1,33 @@
+name: Maize AquaCrop smoke test
+on:
+  push:
+    branches: [maize-aquacrop-smoke-final]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  aquacrop-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install AquaCrop-OSPy 3.1.0
+        run: |
+          python -m pip install --upgrade pip
+          pip install 'aquacrop==3.1.0'
+      - name: Verify installation and run minimal model
+        run: |
+          python - <<'PY'
+          import aquacrop, pandas as pd
+          from aquacrop import AquaCropModel, Soil, Crop, InitialWaterContent
+          print('AQUACROP_MODULE', aquacrop.__file__)
+          print('AQUACROP_VERSION', getattr(aquacrop, '__version__', 'not_exposed'))
+          dates=pd.date_range('2012-05-01','2012-10-01',freq='D')
+          w=pd.DataFrame({'Date':dates,'MinTemp':10.0,'MaxTemp':25.0,'Precipitation':0.0,'ReferenceET':5.0})
+          m=AquaCropModel('2012/05/01','2012/10/01',w,Soil('SandyLoam'),Crop('Maize',planting_date='05/01'),InitialWaterContent(value=['FC']))
+          m.run_model(till_termination=True)
+          print(m.get_simulation_results().to_string(index=False))
+          print('SMOKE_TEST_OK')
+          PY
