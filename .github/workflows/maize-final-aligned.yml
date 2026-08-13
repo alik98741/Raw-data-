@@ -20,15 +20,20 @@ jobs:
         run: pip install pandas numpy scikit-learn
       - name: Run final root-support-aligned model comparison
         run: python maize-aquacrop-eja/final_aligned_model_comparison.py
-      - name: Commit final comparison
+      - name: Commit final comparison conflict-safely
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+alik98741@users.noreply.github.com'
+          rm -rf /tmp/final_aligned_results
+          cp -a maize-aquacrop-eja/results_final_aligned /tmp/final_aligned_results
+          git fetch origin maize-aquacrop-eja-2012-2013
+          git reset --hard origin/maize-aquacrop-eja-2012-2013
+          rm -rf maize-aquacrop-eja/results_final_aligned
+          cp -a /tmp/final_aligned_results maize-aquacrop-eja/results_final_aligned
           git add maize-aquacrop-eja/results_final_aligned
           if git diff --cached --quiet; then
             echo 'No result changes to commit.'
           else
-            git commit -m 'Add final aligned AquaCrop digital-twin comparison'
-            git pull --rebase origin maize-aquacrop-eja-2012-2013
+            git commit -m 'Store final aligned AquaCrop digital-twin comparison'
             git push origin HEAD:maize-aquacrop-eja-2012-2013
           fi
