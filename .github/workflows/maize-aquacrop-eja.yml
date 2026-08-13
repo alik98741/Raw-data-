@@ -4,9 +4,8 @@ on:
     branches: [maize-aquacrop-eja-2012-2013]
     paths:
       - 'maize-aquacrop-eja/run_aquacrop.py'
-      - 'maize-aquacrop-eja/refine_site_soil.py'
-      - 'maize-aquacrop-eja/refine_measured_fc.py'
       - 'maize-aquacrop-eja/root_initial_sensitivity.py'
+      - 'maize-aquacrop-eja/hybrid_actual_aquacrop.py'
       - '.github/workflows/maize-aquacrop-eja.yml'
   workflow_dispatch:
 permissions:
@@ -19,20 +18,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install exact AquaCrop implementation
-        run: |
-          python -m pip install --upgrade pip
-          pip install 'aquacrop==3.1.0'
-      - name: Download public USDA source data
-        run: |
-          curl -L --fail --retry 3 'https://ndownloader.figshare.com/files/44526245' -o maize_2012_2013.xlsx
-          curl -L --fail --retry 3 'https://ndownloader.figshare.com/files/44334653' -o LIRF_Soils.xlsx
-          sha256sum maize_2012_2013.xlsx LIRF_Soils.xlsx
-      - name: Run AquaCrop root-depth and initial-water audit
-        run: python maize-aquacrop-eja/root_initial_sensitivity.py
-      - name: Commit reproducible result files
+      - name: Install analysis dependencies
+        run: pip install pandas numpy scikit-learn
+      - name: Run blind-year AquaCrop-AI analysis
+        run: python maize-aquacrop-eja/hybrid_actual_aquacrop.py
+      - name: Commit reproducible hybrid results
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add maize-aquacrop-eja/results maize-aquacrop-eja/results_sensitivity
-          if git diff --cached --quiet; then echo 'No result changes to commit.'; else git commit -m 'Add AquaCrop root-initial sensitivity results'; git push; fi
+          git add maize-aquacrop-eja/results_hybrid
+          if git diff --cached --quiet; then echo 'No result changes to commit.'; else git commit -m 'Add blind-year AquaCrop-AI results'; git push; fi
