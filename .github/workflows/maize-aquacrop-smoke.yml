@@ -23,9 +23,9 @@ jobs:
           import aquacrop, pandas as pd
           from aquacrop import AquaCropModel, Soil, Crop, InitialWaterContent
           print('AQUACROP_MODULE', aquacrop.__file__)
-          print('AQUACROP_VERSION', getattr(aquacrop, '__version__', 'not_exposed'))
           dates=pd.date_range('2012-05-01','2012-10-01',freq='D')
-          w=pd.DataFrame({'Date':dates,'MinTemp':10.0,'MaxTemp':25.0,'Precipitation':0.0,'ReferenceET':5.0})
+          # AquaCrop-OSPy reads the underlying ndarray in this specific order.
+          w=pd.DataFrame({'MinTemp':10.0,'MaxTemp':25.0,'Precipitation':0.0,'ReferenceET':5.0,'Date':dates})
           m=AquaCropModel('2012/05/01','2012/10/01',w,Soil('SandyLoam'),Crop('Maize',planting_date='05/01'),InitialWaterContent(value=['FC']))
           m.run_model(till_termination=True)
           print(m.get_simulation_results().to_string(index=False))
