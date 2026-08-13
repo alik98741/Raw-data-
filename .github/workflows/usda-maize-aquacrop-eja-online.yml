@@ -2,13 +2,6 @@ name: USDA maize AquaCrop EJA online
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '*/5 * * * *'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'maize-aquacrop-eja/**'
-      - '.github/workflows/usda-maize-aquacrop-eja-online.yml'
 
 jobs:
   aquacrop:
@@ -17,50 +10,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: Install AquaCrop and analysis dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install aquacrop==3.1.0 pandas numpy openpyxl scikit-learn
-          python - <<'PY'
-          import aquacrop, sys
-          print('Python', sys.version)
-          print('AquaCrop', getattr(aquacrop,'__version__','unknown'))
-          print('AquaCrop path', aquacrop.__path__[0])
-          PY
-
-      - name: Export installed AquaCrop package
-        run: |
-          python - <<'PY'
-          import aquacrop, pathlib, shutil
-          src = pathlib.Path(aquacrop.__path__[0])
-          dst = pathlib.Path('maize-aquacrop-eja/vendor/aquacrop')
-          if dst.exists(): shutil.rmtree(dst)
-          dst.parent.mkdir(parents=True, exist_ok=True)
-          shutil.copytree(src, dst, ignore=shutil.ignore_patterns('__pycache__','*.so','*.pyd','*.pyc'))
-          print('exported', src, 'to', dst)
-          PY
-
       - name: Run AquaCrop smoke test
         run: python maize-aquacrop-eja/smoke_aquacrop.py
-
-      - name: Upload smoke-test outputs
+      - name: Upload outputs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: usda-maize-aquacrop-smoke
           path: maize-aquacrop-eja/smoke_outputs/
           if-no-files-found: warn
-          retention-days: 30
-
-      - name: Upload AquaCrop source package
-        uses: actions/upload-artifact@v4
-        with:
-          name: aquacrop-3.1.0-source
-          path: maize-aquacrop-eja/vendor/aquacrop/
           retention-days: 30
