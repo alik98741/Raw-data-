@@ -81,7 +81,9 @@ def run(year,trt):
     return {'year':year,'trt':trt,'plant':str(plant.date()),'harvest':str(harvest.date()),'params':p,'final_columns':list(st.columns),'flux_columns':list(fl.columns),'water_columns':list(ws.columns),'growth_columns':list(gr.columns),'final':st.iloc[0].replace({np.nan:None}).to_dict()}
 
 summary=[]
-for year,trt in [(2012,1),(2012,12),(2013,1),(2013,12)]:
-    summary.append(run(year,trt))
-with open(OUT/'smoke_summary.json','w') as f: json.dump(summary,f,indent=2,default=str)
+for year in (2012,2013):
+    for trt in range(1,13):
+        print(f'Running AquaCrop {year} treatment {trt}')
+        summary.append(run(year,trt))
+with open(OUT/'all_24_summary.json','w') as f: json.dump(summary,f,indent=2,default=str)
 print(json.dumps(summary,indent=2,default=str))
