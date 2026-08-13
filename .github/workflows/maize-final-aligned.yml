@@ -1,0 +1,34 @@
+name: Maize final aligned model comparison
+on:
+  push:
+    branches: [maize-aquacrop-eja-2012-2013]
+    paths:
+      - 'maize-aquacrop-eja/final_aligned_model_comparison.py'
+      - '.github/workflows/maize-final-aligned.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  final-comparison:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install statistical dependencies
+        run: pip install pandas numpy scikit-learn
+      - name: Run final root-support-aligned model comparison
+        run: python maize-aquacrop-eja/final_aligned_model_comparison.py
+      - name: Commit final comparison
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+alik98741@users.noreply.github.com'
+          git add maize-aquacrop-eja/results_final_aligned
+          if git diff --cached --quiet; then
+            echo 'No result changes to commit.'
+          else
+            git commit -m 'Add final aligned AquaCrop digital-twin comparison'
+            git pull --rebase origin maize-aquacrop-eja-2012-2013
+            git push origin HEAD:maize-aquacrop-eja-2012-2013
+          fi
