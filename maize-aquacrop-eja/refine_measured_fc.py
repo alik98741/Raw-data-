@@ -2,9 +2,8 @@ import os, runpy, json
 import numpy as np
 import pandas as pd
 from aquacrop import AquaCropModel, Soil, Crop, InitialWaterContent, IrrigationManagement
-C=runpy.run_path('maize-aquacrop-eja/refine_site_soil.py'); OUT='maize-aquacrop-eja/results_measured_fc';os.makedirs(OUT,exist_ok=True)
-fnum=C['fnum'];missing=C['missing'];metrics=C['metrics'];SR=C['SR'];wd=C['wd'];wb=C['wb'];fcrows=C['C']['fc'];irr=C['irr'];plant=C['plant'];harvest=C['harvest'];swdobs=C['swdobs'];canmean=C['canmean'];annmean=C['annmean'];trtmap=C['trtmap'];om_med=C['om_med']
-# Experiment-specific mean field capacity at seven depths, averaged across 12 treatment plots.
+C=runpy.run_path('maize-aquacrop-eja/refine_site_soil.py'); B=C['C']; OUT='maize-aquacrop-eja/results_measured_fc';os.makedirs(OUT,exist_ok=True)
+fnum=C['fnum'];missing=C['missing'];metrics=C['metrics'];SR=C['SR'];wd=C['wd'];wb=B['wb'];fcrows=B['fc'];irr=C['irr'];plant=C['plant'];harvest=C['harvest'];swdobs=C['swdobs'];canmean=C['canmean'];annmean=C['annmean'];trtmap=C['trtmap'];om_med=C['om_med'];date_from_doy=B['date_from_doy']
 def fc_curve(year):
     pts=[]
     for r in fcrows:
@@ -32,11 +31,10 @@ def deficit(ws,profile,z):
         p=profile.iloc[i];q=max(0.,min(float(z),float(p.zBot))-float(p.z_top))
         if q:s+=(float(p.th_fc)-float(ws[c]))*q*1000
     return s
-# effective irrigation lookup for sensitivity only
 ie=__import__('collections').defaultdict(list)
 for r in wb:
     q=fnum(r.get('irr_eff (mm)'))
-    if q is not None and q>0:ie[(int(r['Year']),int(r['Trt_code']))].append((pd.Timestamp(C['date_from_doy'](int(r['Year']),int(r['DOY']))),q))
+    if q is not None and q>0:ie[(int(r['Year']),int(r['Trt_code']))].append((pd.Timestamp(date_from_doy(int(r['Year']),int(r['DOY']))),q))
 profiles=[]
 for y in [2012,2013]:profiles+=make_soil(y)[1]
 pd.DataFrame(profiles,columns=['Year','sections','layer','top_m','bottom_m','n','source','sand','clay','OM','TAW','thWP','thFC','thS','Ksat']).to_csv(OUT+'/soil_profile.csv',index=False)
