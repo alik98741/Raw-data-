@@ -1,15 +1,13 @@
 name: USDA maize AquaCrop EJA online
 
 on:
-  push:
-    branches: [aquacrop-eja-online]
-    paths:
-      - 'maize-aquacrop-eja/**'
-      - '.github/workflows/usda-maize-aquacrop-eja-online.yml'
   workflow_dispatch:
+  issues:
+    types: [opened]
 
 jobs:
   aquacrop:
+    if: github.event_name != 'issues' || startsWith(github.event.issue.title, '[RUN AQUACROP EJA]')
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
