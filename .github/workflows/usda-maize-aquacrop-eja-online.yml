@@ -31,6 +31,19 @@ jobs:
           import aquacrop, sys
           print('Python', sys.version)
           print('AquaCrop', getattr(aquacrop,'__version__','unknown'))
+          print('AquaCrop path', aquacrop.__path__[0])
+          PY
+
+      - name: Export installed AquaCrop package
+        run: |
+          python - <<'PY'
+          import aquacrop, pathlib, shutil
+          src = pathlib.Path(aquacrop.__path__[0])
+          dst = pathlib.Path('maize-aquacrop-eja/vendor/aquacrop')
+          if dst.exists(): shutil.rmtree(dst)
+          dst.parent.mkdir(parents=True, exist_ok=True)
+          shutil.copytree(src, dst, ignore=shutil.ignore_patterns('__pycache__','*.so','*.pyd','*.pyc'))
+          print('exported', src, 'to', dst)
           PY
 
       - name: Run AquaCrop smoke test
@@ -43,4 +56,11 @@ jobs:
           name: usda-maize-aquacrop-smoke
           path: maize-aquacrop-eja/smoke_outputs/
           if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload AquaCrop source package
+        uses: actions/upload-artifact@v4
+        with:
+          name: aquacrop-3.1.0-source
+          path: maize-aquacrop-eja/vendor/aquacrop/
           retention-days: 30
