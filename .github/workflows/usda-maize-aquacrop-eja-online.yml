@@ -2,12 +2,11 @@ name: USDA maize AquaCrop EJA online
 
 on:
   workflow_dispatch:
-  issues:
-    types: [opened]
+  schedule:
+    - cron: '*/5 * * * *'
 
 jobs:
   aquacrop:
-    if: github.event_name != 'issues' || startsWith(github.event.issue.title, '[RUN AQUACROP EJA]')
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
