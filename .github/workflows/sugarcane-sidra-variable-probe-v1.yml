@@ -1,0 +1,31 @@
+name: Sugarcane SIDRA Variable Probe v1
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/sugarcane-sidra-variable-probe-v1.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - name: Probe current Table 5457 variables
+        shell: python
+        run: |
+          import json, requests
+          u='https://apisidra.ibge.gov.br/values/t/5457/n1/all/v/allxp/p/2024/c782/40106'
+          r=requests.get(u,timeout=120); r.raise_for_status(); d=r.json()
+          rows=d[1:]
+          out=[{'D2C':x.get('D2C'),'D2N':x.get('D2N'),'V':x.get('V'),'MN':x.get('MN')} for x in rows]
+          open('sidra_variable_probe.json','w',encoding='utf-8').write(json.dumps(out,indent=2,ensure_ascii=False))
+          print(json.dumps(out,indent=2,ensure_ascii=False))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sugarcane-sidra-variable-probe-v1
+          path: sidra_variable_probe.json
+          retention-days: 7
