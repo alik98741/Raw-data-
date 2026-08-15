@@ -1,0 +1,27 @@
+name: Sugarcane Industrial Observed Acquisition v2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'sugarcane-industrial-algorithms/acquire_observed_public_v2.py'
+      - '.github/workflows/sugarcane-industrial-observed-acquisition-v2.yml'
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests pandas numpy
+      - name: Acquire verified official IBGE and ANP observations
+        run: python sugarcane-industrial-algorithms/acquire_observed_public_v2.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sugarcane-industrial-observed-public-v2
+          path: sugarcane-industrial-algorithms/observed-public-v2/
+          retention-days: 30
