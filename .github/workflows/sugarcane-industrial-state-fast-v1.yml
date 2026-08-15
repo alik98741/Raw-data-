@@ -1,0 +1,27 @@
+name: Sugarcane Industrial State Fast v1
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'sugarcane-industrial-algorithms/acquire_state_industrial_fast_v1.py'
+      - '.github/workflows/sugarcane-industrial-state-fast-v1.yml'
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests pandas numpy
+      - name: Acquire state-level IBGE and ANP observations
+        run: python sugarcane-industrial-algorithms/acquire_state_industrial_fast_v1.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sugarcane-industrial-state-fast-v1
+          path: sugarcane-industrial-algorithms/state-industrial-fast-v1/
+          retention-days: 30
