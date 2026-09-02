@@ -1,0 +1,32 @@
+name: Rice AWD Phase30b GSDE soil probe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'rice-awd-spatial/phase30b_soil_probe.py'
+      - '.github/workflows/rice-awd-phase30b-soil-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Probe official GSDE download page
+        env:
+          OUT_DIR: phase30b_soil_probe
+        run: python rice-awd-spatial/phase30b_soil_probe.py
+      - name: Upload probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: rice-awd-phase30b-soil-probe
+          path: phase30b_soil_probe/
+          retention-days: 7
