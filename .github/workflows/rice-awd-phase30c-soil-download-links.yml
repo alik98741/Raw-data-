@@ -1,0 +1,46 @@
+name: Rice AWD Phase30c GSDE download links
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/rice-awd-phase30c-soil-download-links.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Fetch GSDE download page and resolve bundles
+        run: |
+          mkdir -p phase30c
+          python - <<'PY'
+          import csv,html,re,urllib.parse,urllib.request
+          base='http://globalchange.bnu.edu.cn/research/soilwd.jsp'
+          req=urllib.request.Request(base,headers={'User-Agent':'Mozilla/5.0'})
+          with urllib.request.urlopen(req,timeout=60) as r:
+              text=r.read().decode('utf-8',errors='ignore'); final=r.geturl()
+          open('phase30c/soilwd.html','w',encoding='utf-8').write(text)
+          rows=[]
+          for m in re.finditer(r'href\s*=\s*["\']([^"\']+)["\']',text,re.I):
+              href=html.unescape(m.group(1)); url=urllib.parse.urljoin(final,href)
+              ctx=re.sub(r'<[^>]+>',' ',text[max(0,m.start()-180):min(len(text),m.end()+180)])
+              ctx=re.sub(r'\s+',' ',html.unescape(ctx)).strip()
+              rows.append({'href':href,'url':url,'context':ctx})
+          with open('phase30c/links.csv','w',newline='',encoding='utf-8') as f:
+              w=csv.DictWriter(f,fieldnames=['href','url','context']);w.writeheader();w.writerows(rows)
+          sel=[r for r in rows if any(x in (r['href']+' '+r['context']).lower() for x in ['1-9.zip','19-26.zip','phh2o','sand'])]
+          with open('phase30c/selected.csv','w',newline='',encoding='utf-8') as f:
+              w=csv.DictWriter(f,fieldnames=['href','url','context']);w.writeheader();w.writerows(sel)
+          print('FINAL',final,'links',len(rows),'selected',len(sel))
+          for r in sel: print(r['url'],r['context'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rice-awd-phase30c-soil-links
+          path: phase30c/
+          retention-days: 7
