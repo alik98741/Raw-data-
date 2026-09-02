@@ -1,0 +1,36 @@
+name: Rice AWD Phase30e TPDC file inventory
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'rice-awd-spatial/phase30e_tpdc_file_inventory.py'
+      - '.github/workflows/rice-awd-phase30e-tpdc-file-inventory.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Inventory TPDC files
+        env:
+          OUT_DIR: phase30e_tpdc_file_inventory
+        run: python rice-awd-spatial/phase30e_tpdc_file_inventory.py
+      - name: Show summary
+        if: always()
+        run: |
+          cat phase30e_tpdc_file_inventory/summary.json || true
+          cat phase30e_tpdc_file_inventory/target_files.csv || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rice-awd-phase30e-tpdc-file-inventory
+          path: phase30e_tpdc_file_inventory/
+          if-no-files-found: error
+          retention-days: 7
