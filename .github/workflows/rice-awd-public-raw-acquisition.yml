@@ -23,6 +23,7 @@ jobs:
           set -euo pipefail
           base='https://zenodo.org/records/21539862/files'
           curl -fL --retry 5 --retry-delay 5 "$base/Phenotyping_32TRJ_IRRI.xlsx?download=1" -o raw_public/Phenotyping_32TRJ_IRRI.xlsx
+          curl -fL --retry 5 --retry-delay 5 "$base/README_for_phenotyping_32TRJ_IRRI.docx?download=1" -o raw_public/README_for_phenotyping_32TRJ_IRRI.docx
           curl -fL --retry 5 --retry-delay 5 "$base/soil_water_potential_IRRI.xlsx?download=1" -o raw_public/soil_water_potential_IRRI.xlsx
           curl -fL --retry 5 --retry-delay 5 "$base/weather_IRRI_compiled.xlsx?download=1" -o raw_public/weather_IRRI_compiled.xlsx
           curl -fL --retry 5 --retry-delay 5 "$base/32TRJ_Germplasm_information.xlsx?download=1" -o raw_public/32TRJ_Germplasm_information.xlsx
@@ -33,6 +34,7 @@ jobs:
           set -euo pipefail
           base='https://zenodo.org/records/21775417/files'
           curl -fL --retry 5 --retry-delay 5 "$base/Phenotyping_32TRJ_DBNRRC.xlsx?download=1" -o raw_public/Phenotyping_32TRJ_DBNRRC.xlsx
+          curl -fL --retry 5 --retry-delay 5 "$base/README_for_phenotyping_32TRJ_DBNRRC.docx?download=1" -o raw_public/README_for_phenotyping_32TRJ_DBNRRC.docx
           curl -fL --retry 5 --retry-delay 5 "$base/soil_environment_DBNRRC.xlsx?download=1" -o raw_public/soil_environment_DBNRRC.xlsx
           curl -fL --retry 5 --retry-delay 5 "$base/USDA_HOURLY_2023.csv?download=1" -o raw_public/USDA_HOURLY_2023.csv
           curl -fL --retry 5 --retry-delay 5 "$base/USDA_HOURLY_2024.csv?download=1" -o raw_public/USDA_HOURLY_2024.csv
@@ -49,10 +51,12 @@ jobs:
         run: |
           set -euo pipefail
           echo '1c592a17e21bebf83e1400bd6ce96108  raw_public/Phenotyping_32TRJ_IRRI.xlsx' | md5sum -c -
+          echo 'cf228ec72b1740c37426c2e0e4c257ad  raw_public/README_for_phenotyping_32TRJ_IRRI.docx' | md5sum -c -
           echo '160ac8fcfb922ee7ff8f83a455af30b6  raw_public/soil_water_potential_IRRI.xlsx' | md5sum -c -
           echo '2155bdf9f15ce49614bcac53df084fd3  raw_public/weather_IRRI_compiled.xlsx' | md5sum -c -
           echo '95b48788cbccae5e236c48e3b94125d0  raw_public/32TRJ_Germplasm_information.xlsx' | md5sum -c -
           echo '7092e608cf6ad741f7b72071493c14a3  raw_public/Phenotyping_32TRJ_DBNRRC.xlsx' | md5sum -c -
+          echo 'fb3fadc9592d1369b6b026cf109e35b4  raw_public/README_for_phenotyping_32TRJ_DBNRRC.docx' | md5sum -c -
           echo '55ab071569151e87e3d05531a2326d74  raw_public/soil_environment_DBNRRC.xlsx' | md5sum -c -
           echo '11895e323ce9eb02ddbd7382ea7b23e8  raw_public/USDA_HOURLY_2023.csv' | md5sum -c -
           echo '6d084a02c739961098887cfd2fdf89c2  raw_public/USDA_HOURLY_2024.csv' | md5sum -c -
