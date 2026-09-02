@@ -1,0 +1,38 @@
+name: Rice AWD Phase30f download GSDE targets
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'rice-awd-spatial/phase30f_download_gsde_targets.py'
+      - '.github/workflows/rice-awd-phase30f-download-gsde-targets.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  soil:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q requests
+      - name: Download official GSDE and retain pH/sand targets
+        env:
+          OUT_DIR: phase30f_gsde_targets
+        run: python rice-awd-spatial/phase30f_download_gsde_targets.py
+      - name: Show soil manifest
+        if: always()
+        run: |
+          cat phase30f_gsde_targets/summary.json || true
+          cat phase30f_gsde_targets/GSDE_target_manifest.csv || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rice-awd-phase30f-gsde-targets
+          path: phase30f_gsde_targets/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 6
