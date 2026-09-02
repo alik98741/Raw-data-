@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
-        run: pip install -q xarray zarr fsspec requests numpy pandas dask
+        run: pip install -q xarray zarr fsspec requests aiohttp numpy pandas dask
       - name: Inspect anonymous AgERA5 ARCO store
         run: |
           python - <<'PY'
