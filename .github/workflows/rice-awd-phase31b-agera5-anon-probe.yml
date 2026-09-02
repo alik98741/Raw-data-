@@ -1,0 +1,50 @@
+name: Rice AWD Phase31b AgERA5 anonymous probe
+
+on:
+  push:
+    paths:
+      - '.github/workflows/rice-awd-phase31b-agera5-anon-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -q xarray zarr fsspec requests numpy pandas dask
+      - name: Inspect anonymous AgERA5 ARCO store
+        run: |
+          python - <<'PY'
+          import json, xarray as xr
+          from pathlib import Path
+          out=Path('out');out.mkdir(exist_ok=True)
+          urls=[
+          'https://arco.datastores.ecmwf.int/cadl-arco-time-001/arco/sis_agrometeorological_indicators/all/timeChunked.zarr',
+          'https://arco.datastores.ecmwf.int/cadl-arco-geo-001/arco/sis_agrometeorological_indicators/all/geoChunked.zarr']
+          res=[]
+          for u in urls:
+            d={'url':u}
+            try:
+              ds=xr.open_zarr(u,consolidated=True,chunks={})
+              d['status']='PASS';d['dims']={k:int(v) for k,v in ds.sizes.items()};d['coords']=list(ds.coords);d['vars']=list(ds.data_vars)
+              d['var_meta']={v:{k:str(val) for k,val in ds[v].attrs.items()} for v in ds.data_vars}
+              d['coord_meta']={v:{k:str(val) for k,val in ds[v].attrs.items()} for v in ds.coords}
+            except Exception as e:
+              d['status']='FAIL';d['error']=repr(e)
+            res.append(d)
+          (out/'probe.json').write_text(json.dumps(res,indent=2))
+          print(json.dumps(res,indent=2)[:30000])
+          if not any(x['status']=='PASS' for x in res): raise SystemExit(2)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rice-awd-phase31b-agera5-anon-probe
+          path: out/probe.json
+          retention-days: 7
