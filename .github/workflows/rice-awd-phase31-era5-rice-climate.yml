@@ -1,0 +1,42 @@
+name: Rice AWD Phase31 ERA5 rice-season climate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'rice-awd-spatial/phase31_era5_rice_climate.py'
+      - '.github/workflows/rice-awd-phase31-era5-rice-climate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  climate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CDSAPI_KEY: ${{ secrets.CDSAPI_KEY }}
+      OUT_DIR: phase31_era5_rice_climate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install analysis dependencies
+        run: pip install -q cdsapi requests numpy pandas xarray netCDF4
+      - name: Build ERA5 2001-2015 GGCMI rice-season climate
+        run: python rice-awd-spatial/phase31_era5_rice_climate.py
+      - name: Show QC
+        if: always()
+        run: cat phase31_era5_rice_climate/ERA5_rice_climate_QC.json || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rice-awd-phase31-era5-rice-climate
+          path: |
+            phase31_era5_rice_climate/ERA5_2001_2015_GGCMI_rice_season_climate_0p5.csv
+            phase31_era5_rice_climate/ERA5_rice_climate_QC.json
+            phase31_era5_rice_climate/ERA5_native_variable_metadata.json
+          if-no-files-found: warn
+          retention-days: 7
