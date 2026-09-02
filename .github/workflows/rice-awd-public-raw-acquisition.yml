@@ -1,0 +1,71 @@
+name: Rice AWD public raw acquisition
+
+on:
+  push:
+    paths:
+      - '.github/workflows/rice-awd-public-raw-acquisition.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Create download directory
+        run: mkdir -p raw_public
+
+      - name: Download IRRI 32TRJ files
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://zenodo.org/records/21539862/files'
+          curl -fL --retry 5 --retry-delay 5 "$base/Phenotyping_32TRJ_IRRI.xlsx?download=1" -o raw_public/Phenotyping_32TRJ_IRRI.xlsx
+          curl -fL --retry 5 --retry-delay 5 "$base/soil_water_potential_IRRI.xlsx?download=1" -o raw_public/soil_water_potential_IRRI.xlsx
+          curl -fL --retry 5 --retry-delay 5 "$base/weather_IRRI_compiled.xlsx?download=1" -o raw_public/weather_IRRI_compiled.xlsx
+          curl -fL --retry 5 --retry-delay 5 "$base/32TRJ_Germplasm_information.xlsx?download=1" -o raw_public/32TRJ_Germplasm_information.xlsx
+
+      - name: Download Arkansas 32TRJ files
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://zenodo.org/records/21775417/files'
+          curl -fL --retry 5 --retry-delay 5 "$base/Phenotyping_32TRJ_DBNRRC.xlsx?download=1" -o raw_public/Phenotyping_32TRJ_DBNRRC.xlsx
+          curl -fL --retry 5 --retry-delay 5 "$base/soil_environment_DBNRRC.xlsx?download=1" -o raw_public/soil_environment_DBNRRC.xlsx
+          curl -fL --retry 5 --retry-delay 5 "$base/USDA_HOURLY_2023.csv?download=1" -o raw_public/USDA_HOURLY_2023.csv
+          curl -fL --retry 5 --retry-delay 5 "$base/USDA_HOURLY_2024.csv?download=1" -o raw_public/USDA_HOURLY_2024.csv
+
+      - name: Download Bo et al. 2024 supplementary workbook
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs43016-024-01081-z/MediaObjects/43016_2024_1081_MOESM3_ESM.xlsx'
+          curl -fL --retry 5 --retry-delay 5 "$url" -o raw_public/43016_2024_1081_MOESM3_ESM.xlsx
+
+      - name: Verify known Zenodo MD5 checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '1c592a17e21bebf83e1400bd6ce96108  raw_public/Phenotyping_32TRJ_IRRI.xlsx' | md5sum -c -
+          echo '160ac8fcfb922ee7ff8f83a455af30b6  raw_public/soil_water_potential_IRRI.xlsx' | md5sum -c -
+          echo '2155bdf9f15ce49614bcac53df084fd3  raw_public/weather_IRRI_compiled.xlsx' | md5sum -c -
+          echo '95b48788cbccae5e236c48e3b94125d0  raw_public/32TRJ_Germplasm_information.xlsx' | md5sum -c -
+          echo '7092e608cf6ad741f7b72071493c14a3  raw_public/Phenotyping_32TRJ_DBNRRC.xlsx' | md5sum -c -
+          echo '55ab071569151e87e3d05531a2326d74  raw_public/soil_environment_DBNRRC.xlsx' | md5sum -c -
+          echo '11895e323ce9eb02ddbd7382ea7b23e8  raw_public/USDA_HOURLY_2023.csv' | md5sum -c -
+          echo '6d084a02c739961098887cfd2fdf89c2  raw_public/USDA_HOURLY_2024.csv' | md5sum -c -
+
+      - name: Inventory files
+        run: |
+          ls -lh raw_public
+          file raw_public/*
+
+      - name: Upload raw public datasets as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rice-awd-public-raw
+          path: raw_public/
+          if-no-files-found: error
+          retention-days: 7
