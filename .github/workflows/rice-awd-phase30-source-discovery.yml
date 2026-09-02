@@ -1,0 +1,46 @@
+name: Rice AWD Phase30 source discovery
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'rice-awd-spatial/phase30_source_discovery.py'
+      - '.github/workflows/rice-awd-phase30-source-discovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Discover and verify official sources
+        env:
+          OUT_DIR: phase30_discovery
+        run: python rice-awd-spatial/phase30_source_discovery.py
+
+      - name: Show summary
+        if: always()
+        run: |
+          test -f phase30_discovery/summary.json && cat phase30_discovery/summary.json || true
+          test -f phase30_discovery/acquisition_audit.csv && cat phase30_discovery/acquisition_audit.csv || true
+
+      - name: Upload discovery artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rice-awd-phase30-source-discovery
+          path: phase30_discovery/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 6
