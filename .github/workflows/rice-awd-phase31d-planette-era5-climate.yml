@@ -23,6 +23,17 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: pip install -q 'icechunk>=1,<3' xarray zarr s3fs numpy pandas dask requests netCDF4
+      - name: Pre-fetch official GGCMI calendars with retries
+        run: |
+          mkdir -p "$OUT_DIR"
+          curl -fL --retry 8 --retry-delay 3 --retry-all-errors --connect-timeout 30 --max-time 600 \
+            'https://zenodo.org/records/5062513/files/ri1_ir_ggcmi_crop_calendar_phase3_v1.01.nc4?download=1' \
+            -o "$OUT_DIR/ri1_ir_ggcmi_crop_calendar_phase3_v1.01.nc4"
+          curl -fL --retry 8 --retry-delay 3 --retry-all-errors --connect-timeout 30 --max-time 600 \
+            'https://zenodo.org/records/5062513/files/ri2_ir_ggcmi_crop_calendar_phase3_v1.01.nc4?download=1' \
+            -o "$OUT_DIR/ri2_ir_ggcmi_crop_calendar_phase3_v1.01.nc4"
+          test "$(wc -c < "$OUT_DIR/ri1_ir_ggcmi_crop_calendar_phase3_v1.01.nc4")" -eq 95915
+          test "$(wc -c < "$OUT_DIR/ri2_ir_ggcmi_crop_calendar_phase3_v1.01.nc4")" -eq 74324
       - name: Build ERA5-Hargreaves rice-season climate
         run: python rice-awd-spatial/phase31d_planette_era5_climate.py
       - name: Show QC
