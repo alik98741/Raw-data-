@@ -25,6 +25,15 @@ jobs:
           python-version: '3.11'
       - name: Install analysis dependencies
         run: pip install -q cdsapi requests numpy pandas xarray netCDF4
+      - name: Patch current Zenodo file-link schema
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('rice-awd-spatial/phase31_era5_rice_climate.py')
+          s=p.read_text()
+          s=s.replace("url=f['links']['content']", "url=(f['links'].get('content') or f['links'].get('self'))")
+          p.write_text(s)
+          PY
       - name: Build ERA5 2001-2015 GGCMI rice-season climate
         run: python rice-awd-spatial/phase31_era5_rice_climate.py
       - name: Show QC
