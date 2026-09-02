@@ -1,0 +1,38 @@
+name: Rice AWD Phase30d TPDC GSDE probe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'rice-awd-spatial/phase30d_tpdc_probe.py'
+      - '.github/workflows/rice-awd-phase30d-tpdc-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Probe TPDC GSDE page and APIs
+        env:
+          OUT_DIR: phase30d_tpdc_probe
+        run: python rice-awd-spatial/phase30d_tpdc_probe.py
+      - name: Show summary
+        if: always()
+        run: |
+          cat phase30d_tpdc_probe/summary.json || true
+          grep -Ei '1-9.zip|19-26.zip|PHH2O5min|SAND5min|download|api' phase30d_tpdc_probe/page_hits.csv | head -80 || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rice-awd-phase30d-tpdc-probe
+          path: phase30d_tpdc_probe/
+          if-no-files-found: error
+          retention-days: 7
