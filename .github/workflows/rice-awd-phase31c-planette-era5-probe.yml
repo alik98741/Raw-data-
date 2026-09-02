@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install
-        run: pip install -q 'icechunk>=1,<3' xarray zarr s3fs numpy pandas
+        run: pip install -q 'icechunk>=1,<3' xarray zarr s3fs numpy pandas dask
       - name: Probe public monthly stores
         run: |
           python - <<'PY'
@@ -35,10 +35,9 @@ jobs:
               sess=repo.readonly_session('main')
               ds=xr.open_dataset(sess.store,engine='zarr',consolidated=False,chunks={})
               d.update(status='PASS',dims={k:int(v) for k,v in ds.sizes.items()},coords=list(ds.coords),vars=list(ds.data_vars),attrs={k:str(v) for k,v in ds.attrs.items()},var_attrs={v:{k:str(x) for k,x in ds[v].attrs.items()} for v in ds.data_vars})
-              # tiny real sample
               vn=var if var in ds.data_vars else list(ds.data_vars)[0]
               latn='latitude' if 'latitude' in ds.coords else 'lat'; lonn='longitude' if 'longitude' in ds.coords else 'lon'; timen='time'
-              sample=ds[vn].sel({timen:slice('2001-01-01','2001-02-01'),latn:25.0,lonn:100.0},method=None if False else 'nearest').compute()
+              sample=ds[vn].sel({timen:slice('2001-01-01','2001-02-01'),latn:25.0,lonn:100.0},method='nearest').compute()
               d['sample']=[float(x) for x in sample.values.ravel()[:4]]
             except Exception as e: d.update(status='FAIL',error=repr(e))
             result[var]=d
